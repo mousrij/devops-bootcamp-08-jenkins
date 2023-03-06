@@ -7,5 +7,5 @@ This project contains notes related to the videos and exercises in Module 08 "Bu
 ### Exercises
 It also contains the [NodeJS application](./node-project/) the [exercises](./Exercises.md) of this module are based on.
 
-## Demo Projects
+### Demo Projects
 And finally it contains the following demo projects:
