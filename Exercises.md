@@ -12,18 +12,19 @@ For that they ask you to **set up a continuous integration pipeline**.
 
 **Tasks:**
 
-- clone the git repository `git@gitlab.com:devops-bootcamp3/node-project.git`
+- clone the git repository `https://gitlab.com/devops-bootcamp3/node-project.git`
 - create your own project/git repo from it
 
 **Steps to solve the tasks:**
 
 ```sh
-git clone git@gitlab.com:devops-bootcamp3/node-project.git
+git clone https://gitlab.com/devops-bootcamp3/node-project.git
 cd node-project
 
 # remove remote repo reference
 rm -rf .git
 # create your own local repository and commit its content
+cd ..
 git init 
 git add .
 git commit -m "Initial commit"

@@ -9,3 +9,4 @@ It also contains the [NodeJS application](./node-project/) the [exercises](./Exe
 
 ### Demo Projects
 And finally it contains the following demo projects:
+- [Install Jenkins on DigitalOceans](./demo-projects/1-install-jenkins/)
