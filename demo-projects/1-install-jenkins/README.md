@@ -32,7 +32,7 @@ docker run -p 8080:8080 -p 50000:50000 -d -v jenkins_home:/var/jenkins_home jenk
 # Jenkins master and worker nodes communicate over port 50000
 ```
 
-Step 4: Initialize Jenkis\
+Step 4: Initialize Jenkins\
 Copy the initial administrator password:
 ```sh
 # in the docker container
