@@ -46,10 +46,11 @@ docker run -p 8080:8080 -p 50000:50000 -d -v jenkins_home:/var/jenkins_home jenk
 
 Copy the initial administrator password:
 ```sh
+# in the docker container
 docker exec -it <container-id> bash
 cat /var/jenkins_home/secrets/initialAdminPassword
 
-# directly on the host
+# or directly on the host
 docker volume inspect jenkins_home
 # the path is displayed as "Mountpoint" -> /var/lib/docker/volumes/jenkins_home/_data
 cat /var/lib/docker/volumes/jenkins_home/_data/secrets/initialAdminPassword
