@@ -123,30 +123,30 @@ apt install nodejs
 <summary>Video: 5 - Jenkins Basics Demo - Freestyle Job</summary>
 <br />
 
-## Create simple freestyle job 
+### Create simple freestyle job 
 Click on "New Item" and enter a name for the new job (e.g. my-job). Select "Freestyle Project" and click "Ok".\
 Under the "Build" section at the bottom, select "Execute shell" from the drop down list. You can execute any shell command you would also be able to execute directly on the shell of the server/container where Jenkins is installed. Enter the command `npm --version`.\
 Add another build step from the drop down: "Invoke top-level Maven targets". Select the version (only maven-3.6 is available) and enter the "goal" `--version`. Click "Save" to save the freestyle job.
 
 In the Jenkins main view (click "Jenkins" at the top left of the screen) you see the new job called "my-job". Click on it and click on "Build Now" in the menu on the left. When the build has finished, click on the build item (build number) on the bottom left and then on "Console Output" in menu on the left to see the output of the two commands (`npm --version` and `mvn --version`).
 
-## Plugin configuration
+### Plugin configuration
 In order for a tool to appear in the list of available build tools, it has to be installed as a plugin first. Go to the Jenkins main view, select "Manage Jenkins" > "Manage Plugins" > "Available" and search for 'nodejs', select it and click on "Install without restart".\
 Go to "Jenkins" > "Manage Jenkins" > "Global Tool Configuration" where you will find the additional NodeJS build tool. To make it available in build jobs, you first have to configure it. Click on "Add NodeJS" and configure it similar to how you configured the maven plugin before.
 
-## Configure Git Repository
+### Configure Git Repository
 Go to "Jenkins" > "my-job" > "Configure" > "Source Code Management" and select the "Git" radio button. Enter the repository URL and select the credentials. If you don't have configured the credentials yet, you can add them by clicking the "Add" drop down and selecting "Jenkins". This will open a dialog where you can add the credentials for the repository. Select the kind "Username with password", enter the credentials, enter an ID (e.g. gitlab-credentials) and click on "Add". Now the credentials are available in the drop down, so select them and finish by clicking on "Save" at the bottom.
 
 If you run the build again and read the console output, you can see that Jenkins fetched the content of the repository before executing the build commands.
 
-## Jenkins Directory Structure
+### Jenkins Directory Structure
 - The job related files (like for example build log files) are stored in /var/jenkins_home/jobs/my-job.
 - The sources checked out from the git repository are stores in /var/jenkins_home/workspace/my-job.
 
-## Do something from Git Repo in Jenkins Job
+### Do something from Git Repo in Jenkins Job
 If the checked out files contain a shell script `<script-file.sh>`, it can be executed during the build. Go to "Jenkins" > "my-job" > "Configure" > "Build" and add the command to execute the shell script ("Execute shell" > "Command": `./<script-file.sh>`). For Jenkins to have the permissions to execute the script, you have to provide them first (`chmod +x <script-file.sh>`).
 
-## Run Tests and build Java Application
+### Run Tests and build Java Application
 Create a new freestyle job (called 'java-maven-build'). Configure the git repository URL and add two maven plugin build steps executing the goals `test` and then `package`. After the build has run, you can find the jar file under /var/jenkins_home/workspace/java-maven-build/target.
 
 </details>
