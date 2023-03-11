@@ -93,13 +93,11 @@ Enter the docker container as root user (because we need the privilege to instal
 docker exec -u 0 -it <container-id> bash
 ```
 
-To , execute `cat /etc/issue`.
-
 Install curl:
 ```sh
 apt update
 apt install curl
-````
+```
 
 Install node:
 ```sh
@@ -148,6 +146,81 @@ If the checked out files contain a shell script `<script-file.sh>`, it can be ex
 
 ### Run Tests and build Java Application
 Create a new freestyle job (called 'java-maven-build'). Configure the git repository URL and add two maven plugin build steps executing the goals `test` and then `package`. After the build has run, you can find the jar file under /var/jenkins_home/workspace/java-maven-build/target.
+
+</details>
+
+*****
+
+<details>
+<summary>Video: 6 - Docker in Jenkins</summary>
+<br />
+
+### Make Docker available in Jenkins
+To create Docker images during the builds, Jenkins needs to have access to the docker command. Instead of installing Docker inside the Jenkins container, we can mount the Docker runtime of the host system as a volume.
+
+To do that, stop the running Jenkins container and start it again with the following command:
+```sh
+docker run -p 8080:8080 -p 50000:50000 -d \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(which docker):/usr/bin/docker \
+  jenkins/jenkins:lts
+```
+
+Now the docker command is available in the Jenkins container too. However, the user `jenkins` (under which Jenkins is running) has no read/write permissions on the file `/var/run/docker.sock`. So we have to enter the Jenkins container as root user and provide the missing permissions to the user `jenkins`:
+```sh
+# enter the docker container as root user
+docker exec -u 0 -it <container-id> bash
+
+  # provide missing permissions and exit
+  chomd 666 /var/run/docker.sock
+  exit
+
+# check if jenkins user can execute docker commands
+docker exec -it <container-id> bash
+  docker pull hello-world
+  exit
+```
+
+Now Jenkins can use the `docker` command in builds.
+
+### Build Docker Image
+Add a Dockerfile to your project sources (in the Git repository), which builds a Docker image from the final (maven, gradle, npm, etc.) build artifact.
+
+In the Jenkins job add an "Execute shell" step to build stepd and enter the command `docker build -t java-maven-app:1.0 .`.
+
+### Push image to DockerHub
+Sign in to your account on [DockerHub](https://hub.docker.com/) and create a private repository (if you don't already have one).
+
+For Jenkins to be able to push images to this repository, we need to configure the credentials. Go to "Jenkins" > "Manage Jenkins" > "Manage Credentials" > "Stores scoped to Jenkins" > "Jenkins" > "Global credentials" > "Add credentials" and enter your DockerHub username and password and an ID (e.g. docker-hub-repo).
+
+Now go back to the Jenkins build configuration and jump to the "Build Environment" section, select "Use secret text(s) or file(s)", add a "Username and password (separated)" binding, define the names of the environment variables holding the username and password (e.g. DOCKER_HUB_USERNAME and DOCKER_HUB_PASSWORD) and select the correct credentials. Now scroll down to the "Build" section (Execute shell), adjust the tag name of the applications image (`docker build -t <your/private-repo-name:version> .) and add commands to login and push the image to the private repository:
+```sh
+echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
+docker push <your/private-repo-name:version>
+```
+
+Save the build configuration and run the build. Then go to your private repository on [DockerHub](https://hub.docker.com/) and check if the new image got pushed.
+
+### Push Docker Image to Nexus Repository
+Because our Nexus repository is accessible via http (not https) we have to add the "insecure-registries" configuration to the host running the Jenkins container. SSH into the droplet running the Jenkins container and create a file `/etc/docker/daemon.json` with the following content:
+```sh
+{
+  "insecure-registries": ["<nexus-droplet-ip>:8083"]
+}
+```
+
+Now restart Docker executing `systemctl restart docker` and restart the Jenkins container (it was stopped when restarting Docker): `docker start <container-id>`. Finally we have to re-grant read/write permissions on the file /var/run/docker.sock (this change was lost when the container was stopped):
+```sh
+# enter the docker container as root user
+docker exec -u 0 -it <container-id> bash
+
+  # provide missing permissions and exit
+  chomd 666 /var/run/docker.sock
+  exit
+```
+
+To let Jenkins push images to the Nexus repository, we have to configure the credentials (as we did before for DockerHub). In the shell command we adjust the image name to `<nexus-ip:8083/image-name:version>` and add `<nexus-ip:8083>` at the end of the login command. We also have to bind the username and password environment variables with the correct credentials (and maybe rename them).
 
 </details>
 
