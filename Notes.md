@@ -225,3 +225,64 @@ To let Jenkins push images to the Nexus repository, we have to configure the cre
 </details>
 
 *****
+
+<details>
+<summary>Video: 7 - Freestyle to Pipeline Job</summary>
+<br />
+
+At the end of the build configuration page of a freestyle job you'll find a dropdown "Add post-build action" with the option "Build other project". Using this option you can chain together multiple freestyle jobs. This lets you divide the whole build workflow into smaller pieces.
+
+However there is a better way to achieve this goal: Pipeline projects. They are more suitable for creating CI/CD pipelines and let you specify the whole build workflow in a script instead of using the Jenkins GUI to assemble various build plugins.
+
+</details>
+
+*****
+
+<details>
+<summary>Video: 8 - Introduction to Pipeline Job</summary>
+<br />
+
+Go to the Jenkins main view and click on "New Item", enter a name (e.g. my-pipeline), and select the "Pipeline" project.
+
+In the build configuration page jump to the "Pipeline" section to connect the build to a Git repository. Pipeline jobs are defined and configured using a Groovy script. You can write the script directly on the configuration page choosing "Pipeline script" from the "Definition" dropdown. However it is recommended to have the script in your application project and let Jenkins execute it after it has been checked out from the SCM (source code managment). This is the second option "Pipeline script from SCM" in the "Definition" dropdown.\
+Select "Git" from the "SCM" dropdown, enter the repository URL, select the credentials and enter the branch you want to check out. In the "Script path" form field leave the pre-set value "Jenkinsfile" unchanged. This will let Jenkins search for a file called "Jenkinsfile" in the root folder of the project and execute it.
+
+### Jenkinsfile Syntax
+Jenkinsfiles can be written in scripted style or in declarative style.
+
+Scripted style:
+```sh
+node {
+  // any Groovy script
+}
+```
+
+Declarative style (predefined structure):
+```sh
+pipeline {
+  agent any // agent defines where this script should be executed (relevant on Jenkins clusters)
+  stages {
+    stage("build") {
+      steps {
+        echo 'building the application...'
+      }
+    }
+    stage("test") {
+      steps {
+        echo 'testing the application...'
+      }
+    }
+    stage("deploy") {
+      steps {
+        echo 'deploying the application...'
+      }
+    }
+  }
+}
+```
+
+After running the build process the status of the different stages are displayed in the UI.
+
+</details>
+
+*****
