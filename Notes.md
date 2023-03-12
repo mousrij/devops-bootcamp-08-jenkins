@@ -247,18 +247,18 @@ Go to the Jenkins main view and click on "New Item", enter a name (e.g. my-pipel
 In the build configuration page jump to the "Pipeline" section to connect the build to a Git repository. Pipeline jobs are defined and configured using a Groovy script. You can write the script directly on the configuration page choosing "Pipeline script" from the "Definition" dropdown. However it is recommended to have the script in your application project and let Jenkins execute it after it has been checked out from the SCM (source code managment). This is the second option "Pipeline script from SCM" in the "Definition" dropdown.\
 Select "Git" from the "SCM" dropdown, enter the repository URL, select the credentials and enter the branch you want to check out. In the "Script path" form field leave the pre-set value "Jenkinsfile" unchanged. This will let Jenkins search for a file called "Jenkinsfile" in the root folder of the project and execute it.
 
-### Jenkinsfile Syntax
+### Jenkinsfile
 Jenkinsfiles can be written in scripted style or in declarative style.
 
 Scripted style:
-```sh
+```groovy
 node {
   // any Groovy script
 }
 ```
 
 Declarative style (predefined structure):
-```sh
+```groovy
 pipeline {
   agent any // agent defines where this script should be executed (relevant on Jenkins clusters)
   stages {
@@ -282,6 +282,198 @@ pipeline {
 ```
 
 After running the build process the status of the different stages are displayed in the UI.
+
+</details>
+
+*****
+
+<details>
+<summary>Video: 9 - Jenkinsfile Syntax</summary>
+<br />
+
+### Attributes in Jenkinsfile
+**Post actions**
+```groovy
+pipeline {
+  agent ...
+  stages {
+    ...
+  }
+  post { // execute some logic after all stages have completed
+    always {
+      // e.g. send an email
+    }
+    success {
+      ...
+    }
+    failure {
+      ...
+    }
+  }
+}
+```
+
+**Define conditionals for each stage**
+```groovy
+stages {
+  stage("test") {
+    when {
+      expression {
+        env.BRANCH_NAME == 'dev' || env.BRANCH_NAME == 'master'
+      }
+    }
+    steps {
+      ...
+    }
+  }
+}
+```
+
+**Environment variables**\
+What variables are available from Jenkins?\
+Open the URL `http(s)://<jenkins-host-ip>:8080/env-vars.html` in your browser.
+
+You can define your own variables available for all stages in the environment block:
+```groovy
+environment {
+  NEW_VERSION = calculateVersion()
+}
+stages {
+  stage("build") {
+    steps {
+      echo 'building the application...'
+      echo "building version ${NEW_VERSION}"
+    }
+  }
+}
+```
+
+**Using credentials**\
+Precondition: The credentials plugin and the credentials binding plugin must be intalled.
+```groovy
+environment {
+  SERVER_CREDENTIALS = credentials('<credentials-id>')
+}
+stages {
+  stage("build") {
+    steps {
+      sh "... ${SERVER_CREDENTIALS} ..."
+    }
+  }
+  stage("deploy") {
+    steps {
+      echo 'deploying the application...'
+      withCredentials([
+        usernamePassword(credentials: '<credentials-id>', usernameVariable: USER, passwordVariable: PWD)
+      ]) {
+        sh "... ${USER} ... ${PWD}..."
+      }
+    } 
+  }
+}
+```
+
+**Access build tools (maven, gradle, jdk)**
+```groovy
+tools {
+  maven 'maven-3.6'
+  gradle ...
+  jdk ...
+}
+stages {
+  stage("build") {
+    steps {
+      sh "mvn clean package"
+    }
+  }
+}
+```
+
+**Parameterize your build**
+```groovy
+parameters {
+  string(name: 'VERSION', defaultValue: '1', description: '...')
+  choice(name: 'VERSION', choices: ['1.1', '1.2', '1,3'], description: '...')
+  boolenParam(name: 'executeTests', defaultValue: true, description: '...') 
+}
+stages {
+  stage("test") {
+    when {
+      expression {
+        params.executeTests
+      }
+    }
+    steps {
+      ...
+    }
+  }
+}
+```
+
+If parameters are defined in the Jenkinsfile, the menu item "Build" will change to "Build with Parameters" and provide a possibility to set these parameters before executing the build.
+
+### Using external Groovy scripts
+Externalize build logic in separate Groovy scripts. At the end of the script you have to add the command `return this`, otherwise the script cannot be imported into the Jenkinsfile:
+```groovy
+def build() {
+  echo 'building the application...'
+}
+def test() {
+  echo 'testing the application...'
+}
+return this
+```
+
+In the Jenkinsfile you can import and use the script like this:
+```groovy
+def gv
+
+pipeline {
+  agent ...
+  stages {
+    stage("init") {
+      script {
+        gv = load "script.groovy"
+      }
+    }
+    stage("build") {
+      steps {
+        script {
+          gv.build()
+        }
+      }
+    }
+    stage("test") {
+      steps {
+        script {
+          gv.test()
+        }
+      }
+    }
+  }
+}
+```
+
+Note: When you open a build, that has already been executed, there is a "Replay" menu item on the left. This lets you edit the Jenkinsfile *and all imported external Groovy scripts* before re-executing the build. This comes in very handy when you want to try out changes on the Jenkinsfile/Groovy scripts without having to push them into the Git repository.
+
+### User Input
+```groovy
+stage("deploy") {
+  input {
+    message "Select the environment to deploy to.
+    parameters {
+      choice(name: 'ENV', choices: ['dev', 'stage', 'prod'], description: '...')
+    }
+  }
+  steps {
+    script {
+      echo "Deploying to ${ENV}" // without the params-prefix here
+    }
+  }
+}
+```
+
+When the build is executed and reaches the deploy stage, it is paused and waits for user input. To provide the input, hover over the paused stage's area in the build view and enter the required values.
 
 </details>
 
