@@ -364,7 +364,7 @@ stages {
     steps {
       echo 'deploying the application...'
       withCredentials([
-        usernamePassword(credentials: '<credentials-id>', usernameVariable: USER, passwordVariable: PWD)
+        usernamePassword(credentials: '<credentials-id>', usernameVariable: 'USER', passwordVariable: 'PWD')
       ]) {
         sh "... ${USER} ... ${PWD}..."
       }
@@ -473,7 +473,57 @@ stage("deploy") {
 }
 ```
 
-When the build is executed and reaches the deploy stage, it is paused and waits for user input. To provide the input, hover over the paused stage's area in the build view and enter the required values.
+When the build is executed and reaches the deploy stage, it is paused and waits for user input. To provide the input, hover over the paused stage's area in the stages view and enter the required values.
+
+</details>
+
+*****
+
+<details>
+<summary>Video: 10 - Create complete Pipeline</summary>
+<br />
+
+Lets create a pipeline doing the same steps as the freestyle job in videos 5 and 6.
+
+```groovy
+pipeline {
+  agent any
+  tools {
+    maven 'maven-3.6'
+  }
+  stages {
+    stage("build jar") {
+      steps {
+        script {
+          echo 'building the application...'
+          sh 'mvn package'
+        }
+      }
+    }
+    stage("build image") {
+      steps {
+        script {
+          echo 'building the docker image...'
+          withCredentials([
+            usernamePassword(credentials: '<credentials-id>', usernameVariable: 'USER', passwordVariable: 'PWD')
+          ]) {
+            sh 'docker build -t .'
+            sh "echo $PWD | docker login -u $USERNAME --password-stdin"
+            sh 'docker push <your/private-repo-name:version>'
+          }
+        }
+      }
+    }
+    stage("deploy") {
+      steps {
+        script {
+          echo 'deploying the application...'
+        }
+      }
+    }
+  }
+}
+```
 
 </details>
 
