@@ -528,3 +528,52 @@ pipeline {
 </details>
 
 *****
+
+<details>
+<summary>Video: 11 - Introduction to Multibranch Pipeline</summary>
+<br />
+
+Most of the time development is done on multiple branches in parallel: the main development is done on the master branch, while there may be branches for bug-fixes or features. While you want to execute tests on all these branches, only one branch is going to be deployed.
+
+So we need pipelines for all the branches, but different behaviour based on the branch that is being built.
+
+We also want a new pipeline to be created automatically as soon as a new branch is pushed to the version control system.
+
+That's exactly what the "Multibranch Pipeline" project type is for. Create one clicking on "New Item" > "Multibranch Pipeline". In the "Branch Sources" section you can enter the Git repository URL, the credentials, and add a behaviour for branch discovery (e.g. "filter by name (with regular expression)").
+
+After saving the new project, Jenkins scans all the branches in the specified repository for a Jenkinsfile. If a Jeninsfile is found, a build pipeline is created based on the content of the Jenkinsfile. To suppress building a branch either adjust the regular expression used to select the branches or remove/rename the Jenkinsfile from the branch.
+
+### Branch-based logic for Multibranch Pipeline
+You don't have to write different Jenkinsfiles for each branch. All branches may have the same Jenkinsfile, and if you need to perform different build logic based on the branch that is currently built, it is possible to do so in the Jenkinsfile:
+
+```groovy
+pipeline {
+  agent any
+  stages {
+    stage("build") {
+      steps {
+        script {
+          echo 'building the application...'
+        }
+      }
+    }
+    stage("deploy") {
+      when {
+        expression {
+          // BRANCH_NAME is an env variable which is set by Jenkins in multibranch pipelines
+          BRANCH_NAME == 'master'
+        }
+      }
+      steps {
+        script {
+          echo 'deploying the application...'
+        }
+      }
+    }
+  }
+}
+```
+
+</details>
+
+*****
