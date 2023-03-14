@@ -577,3 +577,16 @@ pipeline {
 </details>
 
 *****
+
+<details>
+<summary>Video: 13 - Credentials in Jenkins</summary>
+<br />
+
+Credentials are associated to three different scopes:
+- System: They are created from wherever they are needed ("Add"-button) or in "Manage Jenkins" > "Manage Credentials" > "Stores scoped to Jenkins" > "Jenkins (Store) / global (Domains)" > "Add Credentials" > "Scope: System". System credentials are only available on Jenkins server, but not from any jobs/projects. They are defined by Jenkins administratores.
+- Global: They are created in the same way as system credentials, except for the last step where the "Scope: Global" is chosen. Global credentials are visible in all the jobs/projects. They are defined by Jenkins users creating jobs/projects.
+- Multibranch Pipeline: They are created from within a multibranch pipeline project, where you have a "Credentials" item in the menu on the left. It opens a credentials overview similar to the one where you manage the system credentials or global credentials, but with an additional section "Stores scoped to my-multibranch-pipeline". Clicking on the domain-link (global) in this section and then "Add Credentials" opens the same form to enter the credentials, just without the option to choose a scope, as the scope is the multibranch-pipeline folder. Credentials defined here are only visible from within pipelines of this project. Other projects cannot access them in their build steps.
+
+</details>
+
+*****
