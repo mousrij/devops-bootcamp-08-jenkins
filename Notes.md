@@ -28,6 +28,8 @@ All of these tasks can be controlled/managed by a build automation tool like [Je
 
 ### Install Jenkins as a Docker container
 
+See the [Jenkins Documentation](https://www.jenkins.io/doc/book/installing/docker/).
+
 **Create a Droplet on DigitalOcean**
 
 Login to your DigitalOcean account an create a new Droplet (4GB RAM). Jenkins needs at least 1GB RAM. Change the Droplet's name to something like 'jenkins-server' and attach a firewall rule-set to it opening port 22 for SSH from your machine's IP address and port 8080 (Type=Custom) for Jenkins from all IP addresses.
@@ -82,7 +84,7 @@ To execute maven builds or run npm tests, these tools have to be installed. Ther
 - install the tool directly on the server on which Jenkins is running (or in the container if Jenkins is running inside a container)
 
 ### Configure Maven Plugin
-For most of the usual build tools a related plugin is already installed. For Maven this is the case to. So we just have to configure the already installed plugin.
+For most of the usual build tools a related plugin is already installed. For Maven this is the case too. So we just have to configure the already installed plugin.
 
 Go to the "Manage Jenkins" section and click on "Global Tool Configuration".
 Click on the "Add Maven" buttton, enter a name (e.g. maven-3.6) and click on "Save". Now you have the maven command available in all Jenkins jobs.
@@ -130,19 +132,19 @@ In the Jenkins main view (click "Jenkins" at the top left of the screen) you see
 
 ### Plugin configuration
 In order for a tool to appear in the list of available build tools, it has to be installed as a plugin first. Go to the Jenkins main view, select "Manage Jenkins" > "Manage Plugins" > "Available" and search for 'nodejs', select it and click on "Install without restart".\
-Go to "Jenkins" > "Manage Jenkins" > "Global Tool Configuration" where you will find the additional NodeJS build tool. To make it available in build jobs, you first have to configure it. Click on "Add NodeJS" and configure it similar to how you configured the maven plugin before.
+Go to "Dashboard" > "Manage Jenkins" > "Global Tool Configuration" where you will find the additional NodeJS build tool. To make it available in build jobs, you first have to configure it. Click on "Add NodeJS" and configure it similar to how you configured the maven plugin before.
 
 ### Configure Git Repository
-Go to "Jenkins" > "my-job" > "Configure" > "Source Code Management" and select the "Git" radio button. Enter the repository URL and select the credentials. If you don't have configured the credentials yet, you can add them by clicking the "Add" drop down and selecting "Jenkins". This will open a dialog where you can add the credentials for the repository. Select the kind "Username with password", enter the credentials, enter an ID (e.g. gitlab-credentials) and click on "Add". Now the credentials are available in the drop down, so select them and finish by clicking on "Save" at the bottom.
+Go to "Dashboard" > "my-job" > "Configure" > "Source Code Management" and select the "Git" radio button. Enter the repository URL and select the credentials. If you don't have configured the credentials yet, you can add them by clicking the "Add" drop down and selecting "Jenkins". This will open a dialog where you can add the credentials for the repository. Select the kind "Username with password", enter the credentials, enter an ID (e.g. gitlab-credentials) and click on "Add". Now the credentials are available in the drop down, so select them and finish by clicking on "Save" at the bottom.
 
 If you run the build again and read the console output, you can see that Jenkins fetched the content of the repository before executing the build commands.
 
 ### Jenkins Directory Structure
 - The job related files (like for example build log files) are stored in /var/jenkins_home/jobs/my-job.
-- The sources checked out from the git repository are stores in /var/jenkins_home/workspace/my-job.
+- The sources checked out from the git repository are stored in /var/jenkins_home/workspace/my-job.
 
 ### Do something from Git Repo in Jenkins Job
-If the checked out files contain a shell script `<script-file.sh>`, it can be executed during the build. Go to "Jenkins" > "my-job" > "Configure" > "Build" and add the command to execute the shell script ("Execute shell" > "Command": `./<script-file.sh>`). For Jenkins to have the permissions to execute the script, you have to provide them first (`chmod +x <script-file.sh>`).
+If the checked out files contain a shell script `<script-file.sh>`, it can be executed during the build. Go to "Dashboard" > "my-job" > "Configure" > "Build" and add the command to execute the shell script ("Execute shell" > "Command": `./<script-file.sh>`). For Jenkins to have the permissions to execute the script, you have to provide them first (`chmod +x <script-file.sh>`).
 
 ### Run Tests and build Java Application
 Create a new freestyle job (called 'java-maven-build'). Configure the git repository URL and add two maven plugin build steps executing the goals `test` and then `package`. After the build has run, you can find the jar file under /var/jenkins_home/workspace/java-maven-build/target.
@@ -173,7 +175,7 @@ Now the docker command is available in the Jenkins container too. However, the u
 docker exec -u 0 -it <container-id> bash
 
   # provide missing permissions and exit
-  chomd 666 /var/run/docker.sock
+  chmod 666 /var/run/docker.sock
   exit
 
 # check if jenkins user can execute docker commands
@@ -187,14 +189,14 @@ Now Jenkins can use the `docker` command in builds.
 ### Build Docker Image
 Add a Dockerfile to your project sources (in the Git repository), which builds a Docker image from the final (maven, gradle, npm, etc.) build artifact.
 
-In the Jenkins job add an "Execute shell" step to build stepd and enter the command `docker build -t java-maven-app:1.0 .`.
+In the Jenkins job add an "Execute shell" step to the build steps and enter the command `docker build -t java-maven-app:1.0 .`.
 
 ### Push image to DockerHub
 Sign in to your account on [DockerHub](https://hub.docker.com/) and create a private repository (if you don't already have one).
 
-For Jenkins to be able to push images to this repository, we need to configure the credentials. Go to "Jenkins" > "Manage Jenkins" > "Manage Credentials" > "Stores scoped to Jenkins" > "Jenkins" > "Global credentials" > "Add credentials" and enter your DockerHub username and password and an ID (e.g. docker-hub-repo).
+For Jenkins to be able to push images to this repository, we need to configure the credentials. Go to "Dashboard" > "Manage Jenkins" > "Manage Credentials" > "Stores scoped to Jenkins" > "Jenkins" > "Global credentials" > "Add credentials" and enter your DockerHub username and password and an ID (e.g. docker-hub-repo).
 
-Now go back to the Jenkins build configuration and jump to the "Build Environment" section, select "Use secret text(s) or file(s)", add a "Username and password (separated)" binding, define the names of the environment variables holding the username and password (e.g. DOCKER_HUB_USERNAME and DOCKER_HUB_PASSWORD) and select the correct credentials. Now scroll down to the "Build" section (Execute shell), adjust the tag name of the applications image (`docker build -t <your/private-repo-name:version> .) and add commands to login and push the image to the private repository:
+Now go back to the Jenkins build configuration and jump to the "Build Environment" section, select "Use secret text(s) or file(s)", add a "Username and password (separated)" binding, define the names of the environment variables holding the username and password (e.g. DOCKER_HUB_USERNAME and DOCKER_HUB_PASSWORD) and select the correct credentials. Now scroll down to the "Build" section (Execute shell), adjust the tag name of the applications image (`docker build -t <your/private-repo-name:version> .`) and add commands to login and push the image to the private repository:
 ```sh
 echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
 docker push <your/private-repo-name:version>
@@ -588,5 +590,13 @@ Credentials are associated to three different scopes:
 - Multibranch Pipeline: They are created from within a multibranch pipeline project, where you have a "Credentials" item in the menu on the left. It opens a credentials overview similar to the one where you manage the system credentials or global credentials, but with an additional section "Stores scoped to my-multibranch-pipeline". Clicking on the domain-link (global) in this section and then "Add Credentials" opens the same form to enter the credentials, just without the option to choose a scope, as the scope is the multibranch-pipeline folder. Credentials defined here are only visible from within pipelines of this project. Other projects cannot access them in their build steps.
 
 </details>
+
+*****
+
+<details>
+<summary>Video: 14 - Jenkins Shared Library</summary>
+<br />
+
+
 
 *****
