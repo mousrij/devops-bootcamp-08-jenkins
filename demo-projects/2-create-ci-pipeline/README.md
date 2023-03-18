@@ -214,14 +214,15 @@ Step 5: Configure credentials for the private DockerHub repository\
 See step 5 of the freestyle job above.
 
 Step 6: Push to private DockerHub repository\
-Replace to "Build Docker Image" stage with the following stage to build, login and push the image to the private repository:
+Replace the "Build Docker Image" stage with the following stage to build, login and push the image to the private repository:
 ```groovy
 stage("Build and Publish Docker Image") {
     steps {
         script {
-            echo "building the docker image..."
             withCredentials([usernamePassword(credentialsId: 'DockerHub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                echo "building the docker image..."
                 sh 'docker build -t fsiegrist/fesi-repo:devops-bootcamp-java-maven-app-1.0.1 .'
+                echo "publishing the docker image..."
                 sh "echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin"
                 sh 'docker push fsiegrist/fesi-repo:devops-bootcamp-java-maven-app-1.0.1'
             }
@@ -233,3 +234,12 @@ stage("Build and Publish Docker Image") {
 Go to "Dashboard" > "devops-bootcamp-pipeline" > "Build Now"). Then go to your private repository on [DockerHub](https://hub.docker.com/) and check if the new image got pushed.
 
 #### Steps to create a Multibranch Pipeline Job 
+Step 1: Create a new Multibranch Pipeline Job\
+Go to "Dashboard" > "New Item", enter an item name (e.g. devops-bootcamp-multibranch-pipeline), select the "Multibranch Pipeline" area and press the "Ok" button.
+
+Step 2: Connect to the application’s git repository\
+On the configuration page, go to the "Branch Sources" section and select "Git" from the "Add source" dropdown. Enter the URL of the GitHub repository holding the Java Maven application (`https://github.com/fsiegrist/devops-bootcamp-java-maven-app.git`). Choose the credentials created in step 1 of the Freestyle project above. Open the "Add" dropdown under "Discover branches" and select "Filter by name (with regular expression)". Enter .* to select all branches.
+
+As soon as you press the "Save" button, Jenkins scans the Git repository for all branches containing a Jenkinsfile, creates related pipelines and starts the builds.
+
+Because we already added a Dockerfile and Jenkinsfile to the project sources, the final build workflow is already set up and the build is executed. There's nothing left to do for steps 3 to 6 (see Pipeline job above).
