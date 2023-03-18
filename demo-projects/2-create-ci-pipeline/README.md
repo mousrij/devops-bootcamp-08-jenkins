@@ -168,5 +168,68 @@ docker push fsiegrist/fesi-repo:devops-bootcamp-java-maven-app-1.0.0
 Save the build configuration and run the build ("Dashboard" > "devops-bootcamp-freestyle" > "Build Now"). Then go to your private repository on [DockerHub](https://hub.docker.com/) and check if the new image got pushed.
 
 #### Steps to create a Pipeline Job 
+Step 1: Create a new Pipeline Job\
+Go to "Dashboard" > "New Item", enter an item name (e.g. devops-bootcamp-pipeline), select the "Pipeline" area and press the "Ok" button.
+
+Step 2: Connect to the application’s git repository\
+On the configuration page, go to the Pipeline section and select "Pipeline script from SCM". Select "Git" from the SCM dropdown, enter the URL of the GitHub repository holding the Java Maven application (`https://github.com/fsiegrist/devops-bootcamp-java-maven-app.git`). Choose the credentials created in step 1 of the Freestyle project above.
+
+In the "Branches to build" section, enter "*/main" as branch specifier and press the "Save" button.
+
+Step 3: Build Jar\
+Add the following Jenkinsfile to your project source, which builds the application using maven:
+```groovy
+pipeline {
+    agent any
+    tools {
+        maven 'maven-3.9'
+    }
+    stages {
+        stage("Build Application JAR") {
+            steps {
+                script {
+                    echo "building the application..."
+                    sh 'mvn package'
+                }
+            }
+        }
+    }   
+}
+```
+
+Step 4: Build Docker Image\
+Add the same Dockerfile to your project sources as in step 4 of the freestyle job above. But instead of adding an "Execute shell" step in the build configuration, add the following stage to the Jenkinsfile:
+```groovy
+stage("Build Docker Image") {
+    steps {
+        script {
+            echo "building the docker image..."
+            sh 'docker build -t java-maven-app:1.0.0 .'
+        }
+    }
+}
+``` 
+
+Step 5: Configure credentials for the private DockerHub repository\
+See step 5 of the freestyle job above.
+
+Step 6: Push to private DockerHub repository\
+Replace to "Build Docker Image" stage with the following stage to build, login and push the image to the private repository:
+```groovy
+stage("Build and Publish Docker Image") {
+    steps {
+        script {
+            echo "building the docker image..."
+            withCredentials([usernamePassword(credentialsId: 'DockerHub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                sh 'docker build -t fsiegrist/fesi-repo:devops-bootcamp-java-maven-app-1.0.1 .'
+                sh "echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin"
+                sh 'docker push fsiegrist/fesi-repo:devops-bootcamp-java-maven-app-1.0.1'
+            }
+        }
+    }
+}
+```
+
+Go to "Dashboard" > "devops-bootcamp-pipeline" > "Build Now"). Then go to your private repository on [DockerHub](https://hub.docker.com/) and check if the new image got pushed.
 
 #### Steps to create a Multibranch Pipeline Job 
