@@ -631,7 +631,7 @@ def call() {
 Create a Git repository (e.g. on GitHub or GitLab) and push the shared libraries project to it.
 
 ### Make the Shared Library globally available in Jenkins
-Go to "Dashboard" > "Manage Jenkins" > "Configure System" > "Global Pipeline Libraries" and add a new configuration. Enter a name (e.g. `jenkins-shared-library`), a default version (branch, commit hash or tag). Under "Retrieval method" select "Modern SCM". Under "Source Code Management" select "Git", enter the repository URL and select the cedentials. Press the "Save" button.
+Go to "Dashboard" > "Manage Jenkins" > "Configure System" > "Global Pipeline Libraries" and add a new configuration. Enter a name (e.g. `jenkins-shared-library`) and a default version (branch, commit hash or tag). Under "Retrieval method" select "Modern SCM". Under "Source Code Management" select "Git", enter the repository URL and select the cedentials. Press the "Save" button.
 
 ### Use Shared Library in Jenkinsfile
 Add `@Library('jenkins-shared-library')_` at the beginning of your Jenkinsfile (before `pipeline {`). If you have other definitions before the pipeline (e.g. definition of a local Groovy script `def gv`) you can omit the trailing underscore. If you want to override the default version of the library, you can add the required version like this: `@Library('jenkins-shared-library@2.0')_`
@@ -714,7 +714,7 @@ def call(String imageName) {
 }
 ```
 
-### Make the Shared Library available only in Project scope
+### Make the Shared Library available only in Project Scope
 You can also directly import shared libraries into your Jenkinsfiles without making them globally available. Instead of adding `@Library('jenkins-shared-library')_` at the beginning of your Jenkinsfile, do the following:
 ```groovy
 #!/usr/bin/env groovy
