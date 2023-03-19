@@ -128,6 +128,16 @@ pipeline {
 ```
 
 #### Steps to use the JSL in a Jenkins Pipeline (Project Scope)
-Step 1: 
+Step 1: Use the library in the Jenkins Pipeline\
+It is not necessary to define the JSL globally in Jenkins. You can directly use it in the Jenkinsfiles of your projects. Just replace the `@Library('jenkins-shared-library')_` line with the following snippet:
+```groovy
+library identifier: 'jenkins-shared-library@main', retriever: modernSCM(
+  [
+    $class: 'GitSCMSource',
+    remote: 'https://github.com/fsiegrist/devops-bootcamp-jenkins-shared-library.git',
+    credentialsId: 'GitHub'
+  ]
+)
+```
 
-Step 2: 
+Note that specifying a version of the JSL is mandatory here.
