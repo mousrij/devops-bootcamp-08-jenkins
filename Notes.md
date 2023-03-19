@@ -507,9 +507,9 @@ pipeline {
         script {
           echo 'building the docker image...'
           withCredentials([
-            usernamePassword(credentials: '<credentials-id>', usernameVariable: 'USER', passwordVariable: 'PWD')
+            usernamePassword(credentials: '<credentials-id>', usernameVariable: 'USERNAME', passwordVariable: 'PWD')
           ]) {
-            sh 'docker build -t .'
+            sh 'docker build -t <your/private-repo-name:version> .'
             sh "echo $PWD | docker login -u $USERNAME --password-stdin"
             sh 'docker push <your/private-repo-name:version>'
           }
@@ -597,6 +597,141 @@ Credentials are associated to three different scopes:
 <summary>Video: 14 - Jenkins Shared Library</summary>
 <br />
 
+Shared libraries are used to store build logic  that can be reused in different build pipelines of different projects. They are an extension to the pipeline, are written in Groovy as the Jenkinsfile, use their own (Git) repository, and are referenced from within the Jenkinsfiles of the different projects.
 
+Create a new Groovy project (in your IDE) with its own repository. The structure of Shared Libraries projects is the following:
+- `vars` folder: Groovy functions that are called from the Jenkinsfile; each function has to be in its own individual Groovy file
+- `src` folder: helper code
+- `resources` folder: external libraries, non Groovy files
+
+Add a `vars` folder to the project and within this folder a file called `buildJar.groovy`. The name of the file (without extension) is the same as the name of the function to be called from within the Jenkinsfile. Write the following file content:
+```groovy
+#!/usr/bin/env groovy
+def call() {
+  echo "building the application..."
+  sh 'mvn package'
+}
+```
+
+Add a second file called `buildAndPublishImage.groovy` to the `vars` folder with the following content:
+```groovy
+#!/usr/bin/env groovy
+def call() {
+  echo 'building the docker image...'
+  withCredentials([
+    usernamePassword(credentials: '<credentials-id>', usernameVariable: 'USERNAME', passwordVariable: 'PWD')
+  ]) {
+    sh 'docker build -t <your/private-repo-name:version> .'
+    sh "echo $PWD | docker login -u $USERNAME --password-stdin"
+    sh 'docker push <your/private-repo-name:version>'
+  }
+}
+```
+
+Create a Git repository (e.g. on GitHub or GitLab) and push the shared libraries project to it.
+
+### Make the Shared Library globally available in Jenkins
+Go to "Dashboard" > "Manage Jenkins" > "Configure System" > "Global Pipeline Libraries" and add a new configuration. Enter a name (e.g. `jenkins-shared-library`), a default version (branch, commit hash or tag). Under "Retrieval method" select "Modern SCM". Under "Source Code Management" select "Git", enter the repository URL and select the cedentials. Press the "Save" button.
+
+### Use Shared Library in Jenkinsfile
+Add `@Library('jenkins-shared-library')_` at the beginning of your Jenkinsfile (before `pipeline {`). If you have other definitions before the pipeline (e.g. definition of a local Groovy script `def gv`) you can omit the trailing underscore. If you want to override the default version of the library, you can add the required version like this: `@Library('jenkins-shared-library@2.0')_`
+
+Now you can call the shared library function directly by name, e.g.
+```groovy
+stage("build jar") {
+  steps {
+    script {
+      buildJar()
+    }
+  }
+}
+stage("build image") {
+  steps {
+    script {
+      buildAndPublishImage()
+    }
+  }
+}
+```
+
+### Using Parameters in Shared Library
+Let's say we want to pass in the `<your/private-repo-name:version>` string as a paramater to the shared library function `buildAndPublishImage`. To do this, replace the content of the file called `buildAndPublishImage.groovy` with the following:
+```groovy
+#!/usr/bin/env groovy
+def call(String imageName) {
+  echo 'building the docker image...'
+  withCredentials([
+    usernamePassword(credentialsId: '<credentials-id>', usernameVariable: 'USERNAME', passwordVariable: 'PWD')
+  ]) {
+    sh "docker build -t $imageName ."
+    sh "echo $PWD | docker login -u $USERNAME --password-stdin"
+    sh "docker push $imageName"
+  }
+}
+```
+Now the image name can be passed in as a parameter when calling it from within the Jenkinsfile: `buildAndPublishImage '<your/private-repo-name:version>'`
+
+Note: All **environment variables**, that are available in a Jenkinsfile are also available in a shared library function.
+
+### Extract Logic into Groovy Classes
+In order to avoid duplicate code in the various shared library functions inside the `vars` folder, we can extract logic into Groovy classes inside the `src` folder.
+
+Example class holding the logic of the `buildAndPublishImage` function:
+```groovy
+#!/usr/bin/env groovy
+package com.example
+
+class Docker implements Serializable {
+  
+  def script
+
+  Docker(script) {
+    this.script = script
+  }
+
+  def buildAndPublishImage(String imageName) {
+    script.echo 'building the docker image...'
+    script.withCredentials([
+      script.usernamePassword(credentialsId: '<credentials-id>', usernameVariable: 'USERNAME', passwordVariable: 'PWD')
+    ]) {
+      script.sh "docker build -t $imageName ."
+      script.sh "echo $script.PWD | docker login -u $script.USERNAME --password-stdin"
+      script.sh "docker push $imageName"
+    }
+  }
+}
+```
+
+Let the classes implement `Serializable` to support saving the state if a pipeline is paused and resumed. Note that the Jenkinsfile DSL is not available in Groovy classes. That's why we have to pass in a `script` parameter to the constructor. Via this parameter the DSL functions are accessible. The same is true for environment variables.
+
+Now the content of the `buildAndPublishImage.groovy` file can be replaced with the following:
+```groovy
+#!/usr/bin/env groovy
+import com.example.Docker
+
+def call(String imageName) {
+  return new Docker(this).buildAndPublishImage(imageName)
+}
+```
+
+### Make the Shared Library available only in Project scope
+You can also directly import shared libraries into your Jenkinsfiles without making them globally available. Instead of adding `@Library('jenkins-shared-library')_` at the beginning of your Jenkinsfile, do the following:
+```groovy
+#!/usr/bin/env groovy
+
+library identifier: 'jenkins-shared-library@1.0', retriever: modernSCM(
+  [
+    $class: 'GitSCMSource',
+    remote: '<repository URL>',
+    credentialsId: '<credentials-id>'
+  ]
+)
+
+pipeline {
+  ...
+}
+```
+
+</details>
 
 *****
