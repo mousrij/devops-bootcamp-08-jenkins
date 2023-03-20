@@ -735,3 +735,33 @@ pipeline {
 </details>
 
 *****
+
+<details>
+<summary>Video: 15 - Webhooks: Trigger Pipeline Jobs automatically</summary>
+<br />
+
+Usually you want the build pipelines to be triggered automatically whenever changes are pushed to the Git repository. To reach that goal the Git repository (GitLab, GitHub, etc.) has to be configured accordingly.
+
+Automatic triggering of the build pipeline may also be configured to happen on a scheduler basis (e.g. once an hour). This may make sense for builds including long running tests.
+
+Manually starting the build may make sense for a build that deploys the build artifact to a production server.
+
+### Automatically Trigger the Build whenever Changes Happen in the Git Repository
+Go to "Dashboard" > "Manage Jenkins" > "Manage Plugins" > "Available plugins" and search for "gitlab". Select the "GitLab (Build Triggers)" plugin and press the "Install without restart" button.
+
+Now that the plugin is installed, go to "Dashboard" > "Manage Jenkins" > "Configure System" where you will find a "GitLab" section. Make sure "Enable authentication for '/project' endpoint" is checked, enter a connection name (e.g. gitlab-conn) and the GitLab host URL ('https://gitlab.com'). To add an API token for GitLab access, click on "Add" > "Jenkins". Select the kind "GitLab API token". To get the access token go to your GitLab account, open your profile and select "Access Token" on the left. Enter a name of the personal access token (e.g. jenkins), an expiration date, and select the "api" scope, before pressing the "Create personal API token" button. Copy the generated access token and paste it into the Jenkins form field "Api token". Enter an ID (e.g. GitLab API token) and press the "Add" button. Now you can select the token from the credentials dropdown and press the "Save" button.
+
+When you open the configuration of a build pipeline, you'll find a GitLab connection configured as well as automatically enabled GitLab build triggers.
+
+The second part is to configure GitLab so that it triggers Jenkins whenever code changes are pushed to the repository. So go back to your GitLab project and click on "Settings" > "Integrations" > "Jenkins CI". Enable the integration, select "Push" for the trigger, enter the Jenkins URL (port incl.), the Jenkins pipeline name as project name, and username / password of your Jenkins account. Press the "Save changes" button.
+
+#### Additional Configurations for Multibranch Pipelines
+To enable automatic triggering of builds for multibranch pipeline projects, some additional steps are required. Go to "Dashboard" > "Manage Jenkins" > "Manage Plugins" > "Available plugins" and search for "multibranch scan". Select the "Multibranch Scan Webhook Trigger" plugin and press the "Install without restart" button.
+
+Now open the configuration of your multibranch pipeline project and scroll down to the "Scan Multibranch Pipeline Triggers" section. There you'll find an additional checkbox "Scan by webhook", that was added by the plugin. Select it and enter a trigger token. This can be any name (e.g. gitlabtoken). Click on the question mark on the right border belonging to the trigger token and copy the webhook URL description (starting with JENKINS_URL). Save the configuration.
+
+Next go back to your GitLab account and open "Settings" > "Webhooks". Paste the copied URL to the URL field and replace `JENKINS_URL` and `[Trigger token]` with the correct values. Select the "Push events" trigger and press the "Add webhook" button.
+
+</details>
+
+*****
