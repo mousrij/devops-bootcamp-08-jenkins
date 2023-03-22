@@ -12,3 +12,4 @@ And finally it contains the following demo projects:
 - [Install Jenkins on DigitalOceans](./demo-projects/1-install-jenkins/)
 - [Create a CI Pipeline](./demo-projects/2-create-ci-pipeline/)
 - [Create a Jenkins Shared Library](./demo-projects/3-create-shared-library/)
+- [Webhooks](./demo-projects/4-webhooks/)
