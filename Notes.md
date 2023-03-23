@@ -765,3 +765,93 @@ Next go back to your GitLab account and open "Settings" > "Webhooks". Paste the 
 </details>
 
 *****
+
+<details>
+<summary>Video: 16 - Dynamically Increment Application Version in Jenkins Pipeline</summary>
+<br />
+
+### How to increment the version locally using Maven
+```sh
+# parse the version string of the current maven project and set properties containing
+# the component parts of the version. This mojo sets the following properties:
+# parsedVersion.majorVersion
+# parsedVersion.minorVersion
+# parsedVersion.incrementalVersion
+# parsedVersion.qualifier
+# parsedVersion.buildNumber
+# parsedVersion.nextMajorVersion
+# parsedVersion.nextMinorVersion
+# parsedVersion.nextIncrementalVersion
+# parsedVersion.nextBuildNumber
+mvn build-helper:parse-version
+
+# set the version of the current maven project to the given value
+mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
+
+# combining these two goals we can automatically increment any part of the version
+mvn build-helper:parse-version versions:set \
+  -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion}
+
+# the last command will increment the bugfix version in the pom.xml;
+# it will also store the last version in a pom.xml.versionsBackup file;
+# revert the changes with
+mvn versions:revert
+# commit the changes with 
+mvn versions:commit
+# both commands will remove the pom.xml.versionsBackup file;
+# after that, revert is no longer possible
+```
+
+### How to increment the version on Jenkins using Maven
+In the Jenkinsfile add a stage before the build stage, that increments the version:
+```groovy
+stages {
+  stage("Increment Version") {
+    steps {
+      script {
+        echo 'incrementing the bugfix version of the application...'
+        sh 'mvn build-helper:parse-version versions:set \
+              -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
+              versions:commit'
+      }
+    }
+  }
+  stage("Build Application JAR") {
+    ...
+  }
+  stage("Build and Publish Docker Image") {
+    ...
+  }
+}
+```
+
+We also want to use the new version for tagging the Docker image created later in the pipeline. To do this, we add the following commands to the script in the "Increment Version" stage (after the `sh` command):
+```groovy
+def matcher = readFile('pom.xml') =~ '<version>(.*)</version>'
+def version = matcher[0][1] // first match, second group (group 1 is the whole expression)
+env.IMAGE_VERSION = "$version-$BUILD_NUMBER" // BUILD_NUMBER is an env varibale provided by Jenkins
+```
+
+In the "Build and Publish Docker Image" stage we replace the hardcoded image version with `${IMAGE_VERSION}`.
+
+In the Dockerfile we have to replace the hardcoded JAR version 
+```sh
+COPY ./target/java-maven-app-1.0.0.jar /opt/bootcamp-java-maven-app
+
+CMD ["java", "-jar", "/opt/bootcamp-java-maven-app/java-maven-app-1.0.0.jar"]
+```
+
+with the following:
+```sh
+COPY ./target/java-maven-app-*.jar /opt/bootcamp-java-maven-app
+
+CMD java -jar /opt/bootcamp-java-maven-app/java-maven-app-*.jar
+```
+
+The second command will only work if there is just one jar file. To enforce this we have to replace the command `mvn package` in the "Build Application JAR" stage with `mvn clean package`.
+
+Now we are ready to commit all the changes and trigger the build.
+
+</details>
+
+*****
