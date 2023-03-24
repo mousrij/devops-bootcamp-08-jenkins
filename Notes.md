@@ -879,13 +879,13 @@ stage('Commit Version Update') {
 ```
 We have to use `git push origin HEAD:main` (`<src>:<dest>`) instead of `git push origin main` or just `git push` because Jenkins does not check out a branch but a commit.
 
-To prevent Git from complaining (when executing a commit) that there is no email configured, we have to ssh into the Jenkins server and execute the following commands:
+To prevent Git from complaining (when doing a commit) that there is no author's email configured, we have to ssh into the Jenkins server and execute the following commands:
 ```sh
 git config --global user.email "jenkins@example.com"
 git config --global user.name "jenkins"
 ```
 
-If we configured Jenkins to autmoatically trigger a new build on any push to the Git repository, we would end up in an endless build-push-build-push loop. In order to prevent this from happening we have to detect that a commit was made by Jenkins and ignore the trigger in this case.\
+If we configured Jenkins to autmoatically trigger a new build on any push to the Git repository, we would end up in an endless build-push-build-push loop. In order to prevent this we have to detect that a commit was made by Jenkins and ignore the trigger in this case.\
 To do this, we install a plugin in Jenkins called "GitHub Commit Skip SCM Behaviour" for GitHub or "Ignore Committer Strategy" for GitLab. The **GitHub** plugin lets you configure additional behaviours in the Git configuration: choose "Polling ignores commits from certain users") and enter the username of the committer to be ignored for triggering a build (`jenkins` in our case). The plugin for **GitLab** lets you configure an email address of a committer that will be ignored for triggering a build (`jenkins@example.com` in our case). 
 
 </details>
