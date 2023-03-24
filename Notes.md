@@ -767,7 +767,7 @@ Next go back to your GitLab account and open "Settings" > "Webhooks". Paste the 
 *****
 
 <details>
-<summary>Video: 16 - Dynamically Increment Application Version in Jenkins Pipeline</summary>
+<summary>Video: 16 - Dynamically Increment Application Version in Jenkins Pipeline (Part 1)</summary>
 <br />
 
 ### How to increment the version locally using Maven
@@ -851,6 +851,42 @@ CMD java -jar /opt/bootcamp-java-maven-app/java-maven-app-*.jar
 The second command will only work if there is just one jar file. To enforce this we have to replace the command `mvn package` in the "Build Application JAR" stage with `mvn clean package`.
 
 Now we are ready to commit all the changes and trigger the build.
+
+</details>
+
+*****
+
+<details>
+<summary>Video: 17 - Dynamically Increment Application Version in Jenkins Pipeline (Part 2)</summary>
+<br />
+
+After Jenkins incremented the bugfix version in the pom.xml, it has to commit this change to the Git repository, otherwise it would start from the same original version and increment it in every build to the same next version.
+
+Add a new stage "Commit Version Update" to the Jenkinsfile:
+```groovy
+stage('Commit Version Update') {
+  steps {
+    script {
+      withCredentials([usernamePassword(credentialsId: 'GitHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+        sh "git remote set-url origin https://${USERNAME}:${PASSWORD}@github.com/fsiegrist/devops-bootcamp-java-maven-app.git"
+        sh 'git add .'
+        sh 'git commit -m "ci: version bump'
+        sh 'git push origin HEAD:main'
+      }
+    }
+  }
+}
+```
+We have to use `git push origin HEAD:main` (`<src>:<dest>`) instead of `git push origin main` or just `git push` because Jenkins does not check out a branch but a commit.
+
+To prevent Git from complaining (when executing a commit) that there is no email configured, we have to ssh into the Jenkins server and execute the following commands:
+```sh
+git config --global user.email "jenkins@example.com"
+git config --global user.name "jenkins"
+```
+
+If we configured Jenkins to autmoatically trigger a new build on any push to the Git repository, we would end up in an endless build-push-build-push loop. In order to prevent this from happening we have to detect that a commit was made by Jenkins and ignore the trigger in this case.\
+To do this, we install a plugin in Jenkins called "GitHub Commit Skip SCM Behaviour" for GitHub or "Ignore Committer Strategy" for GitLab. The **GitHub** plugin lets you configure additional behaviours in the Git configuration: choose "Polling ignores commits from certain users") and enter the username of the committer to be ignored for triggering a build (`jenkins` in our case). The plugin for **GitLab** lets you configure an email address of a committer that will be ignored for triggering a build (`jenkins@example.com` in our case). 
 
 </details>
 
