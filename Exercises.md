@@ -49,7 +49,26 @@ git push -u origin main
 Configure your application to be built as a Docker image.
 - Dockerize your NodeJS app
 
-**Steps to solve the tasks:**
+**Steps to solve the tasks:**\
+Step 1: Create a Dockerfile with the following content in the project root:
+```sh
+FROM node:13-alpine
+
+RUN mkdir -p /usr/app
+COPY app/images/* /usr/app/images/
+COPY app/index.html /usr/app/
+COPY app/package.json /usr/app/
+COPY app/server*.js /usr/app/
+
+WORKDIR /usr/app
+EXPOSE 3000
+
+RUN npm install
+
+CMD ["node", "server.js"]
+```
+
+Commit and push the Dockerfile.
 
 </details>
 
@@ -72,6 +91,87 @@ You want the following steps to be included in your pipeline:
   The application version increment must be committed and pushed to a remote Git repository.
 
 **Steps to solve the tasks:**
+Step 1: Prerequisites (tools and credentials)\
+For the build pipeline we need Node and NPM to be installed in the Docker container running Jenkins. We further need credentials for accessing GitHub and DockerHub. All of these have already been installed and configured on Jenkins for [demo project 2](./demo-projects/2-create-ci-pipeline/).\
+To read the updated version from the package.json file, we need JSON support. That's why we install the "Pipeline Utility Steps" plugin. It provieds a `readJSON` function.
+
+Now we can start writing the Jenkinsfile.
+
+Step 2: Add a stage for incrementing the application version\
+The patch version is incremented using the command `npm version patch`. To read the updated version from the package.json file, we use the `readJSON` function provided by the "Pipeline Utility Steps" plugin:
+```groovy
+#!/usr/bin/env groovy
+
+pipeline {
+    agent any
+    stages {
+        stage('Bump Version') {
+            steps {
+                script {
+                    echo 'incrementing patch version...'
+                    dir('app') {
+                        sh 'npm version patch'
+
+                        def packageJson = readJSON file: 'package.json'
+                        def version = packageJson.version
+
+                        env.IMAGE_VERSION = "$version-$BUILD_NUMBER"
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+Step 3: Add a stage for running the tests\
+```groovy
+stage('Run Tests') {
+    steps {
+        script {
+            dir('app') {
+                sh 'npm install'
+                sh 'npm run test'
+            } 
+        }
+    }
+}
+```
+
+Step 4: Add a stage for building and pushing the Docker image\
+```groovy
+stage('Build and Push Docker Image') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'DockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+            sh "docker build -t fsiegrist/fesi-repo:devops-bootcamp-node-project-${IMAGE_VERSION} ."
+            sh "echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin"
+            sh "docker push fsiegrist/fesi-repo:devops-bootcamp-node-project-${IMAGE_VERSION}"
+        }
+    }
+}
+```
+
+Step 5: Add a stage for committing the package.json file with the incremented version\
+```groovy
+stage('Commit Version Update') {
+    steps {
+        script {
+            withCredentials([usernamePassword(credentialsId: 'GitHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                sh 'git config user.email "jenkins@example.com"'
+                sh 'git config user.name "jenkins"'
+
+                sh "git remote set-url origin https://${USERNAME}:${PASSWORD}@github.com/fsiegrist/devops-bootcamp-node-project.git"
+                sh 'git add app/package.json'
+                sh 'git commit -m "ci: version bump"'
+                sh 'git push origin HEAD:main'
+
+                sh 'git config --unset user.email'
+                sh 'git config --unset user.name'
+            }
+        }
+    }
+}
+```
 
 </details>
 
@@ -87,6 +187,21 @@ After the pipeline has run successfully, you:
 - Manually deploy the new docker image on the droplet server.
 
 **Steps to solve the tasks:**
+Step 1: ssh into a DigitalOcean droplet
+
+Step 2: Execute the following commands:
+```sh
+docker login
+# enter username and password for Docker-Hub
+
+docker run -p3000:3000 -d fsiegrist/fesi-repo:devops-bootcamp-node-project-1.0.2-11
+```
+
+Step 3: Open port 3000\
+Configure a firewall opening the port 3000 for all IP addresses.
+
+Step 4: Test the application\
+Open a browser and enter the URL `http://<droplet-ip>:3000/`.
 
 </details>
 
