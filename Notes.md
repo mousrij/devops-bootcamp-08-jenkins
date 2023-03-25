@@ -870,7 +870,7 @@ stage('Commit Version Update') {
       withCredentials([usernamePassword(credentialsId: 'GitHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
         sh "git remote set-url origin https://${USERNAME}:${PASSWORD}@github.com/fsiegrist/devops-bootcamp-java-maven-app.git"
         sh 'git add .'
-        sh 'git commit -m "ci: version bump'
+        sh 'git commit -m "ci: version bump"'
         sh 'git push origin HEAD:main'
       }
     }
@@ -879,14 +879,24 @@ stage('Commit Version Update') {
 ```
 We have to use `git push origin HEAD:main` (`<src>:<dest>`) instead of `git push origin main` or just `git push` because Jenkins does not check out a branch but a commit.
 
-To prevent Git from complaining (when doing a commit) that there is no author's email configured, we have to ssh into the Jenkins server and execute the following commands:
+To prevent Git from complaining (when doing a commit) that no author's email has been configured, we have to ssh into the Jenkins host server and execute the following commands:
 ```sh
-git config --global user.email "jenkins@example.com"
-git config --global user.name "jenkins"
+docker exec -it <jenkins-container-id> bash
+  git config --global user.email "jenkins@example.com"
+  git config --global user.name "jenkins"
+  exit
 ```
 
-If we configured Jenkins to autmoatically trigger a new build on any push to the Git repository, we would end up in an endless build-push-build-push loop. In order to prevent this we have to detect that a commit was made by Jenkins and ignore the trigger in this case.\
-To do this, we install a plugin in Jenkins called "GitHub Commit Skip SCM Behaviour" for GitHub or "Ignore Committer Strategy" for GitLab. The **GitHub** plugin lets you configure additional behaviours in the Git configuration: choose "Polling ignores commits from certain users") and enter the username of the committer to be ignored for triggering a build (`jenkins` in our case). The plugin for **GitLab** lets you configure an email address of a committer that will be ignored for triggering a build (`jenkins@example.com` in our case). 
+If we configured Jenkins to automatically trigger a new build on any push to the Git repository, we would end up in an endless build-push-build-push loop. In order to prevent this we have to detect that a commit was made by Jenkins and ignore the trigger in this case.\
+To do this, we install a plugin in Jenkins called "Ignore Committer Strategy" for GitLab. This plugin lets you configure an email address of a committer that will be ignored for triggering a build (`jenkins@example.com` in our case). Open the configuration page for the multibranch pipeline project and scroll down to the "Branch Sources" > "Git" section. Open the "Add" dropdown for "Build strategies", select "Ignore Committer Strategy" and enter the email address of the committer, whose commits are to be ignored: `jenkins@example.com`. Also make sure the "Allow builds when a changeset contains non-ignored author(s)" checkbox is selected.
+
+### Additional Notes by Felix Siegrist
+If the code is available in a **GitHub** repository, it is not necessary to achieve the same for a standard pipeline project. Just go to the pipeline configuration and scroll down to "Additional Behaviours" in the Git configuration. Click the "Add" dropdown and choose "Polling ignores commits from certain users" and enter the username of the committer to be ignored for triggering a build (`jenkins` in our case).\
+However, for multibranch pipeline projects I didn't find out, how to configure Jenkins to suppress automatic triggering of the build for Jenkins commits. The plugin suggested in the video ("GitHub Commit Skip SCM Behaviour") seems not to work for multibranch pipelines.
+
+Committing changes back to the project repository is problematic. And it will fail if a developer pushed commits to the repo while a Jenkins build was running. When Jenkins then tries to push its version bump to the repo, it would first have to pull the newer commit from the repo.
+
+So maybe setting the version - even if it is just the patch version - should be something that is explicitly done by a developer. There are other ways to make sure, every build artifact (jar, docker image) gets its unique version/tag. E.g. use a pattern like `<version>-<timestamp>-<buildNumber>`.
 
 </details>
 
