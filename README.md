@@ -13,3 +13,4 @@ And finally it contains the following demo projects:
 - [Create a CI Pipeline](./demo-projects/2-create-ci-pipeline/)
 - [Create a Jenkins Shared Library](./demo-projects/3-create-shared-library/)
 - [Webhooks](./demo-projects/4-webhooks/)
+- [Dynamic Version Bumb](./demo-projects/5-dynamic-version-bump/)

@@ -24,13 +24,12 @@ cd node-project
 # remove remote repo reference
 rm -rf .git
 # create your own local repository and commit its content
-cd ..
 git init 
 git add .
 git commit -m "Initial commit"
 
 # create git repository on GitHub push your newly created local repository to it
-git remote add origin git@github.com:fsiegrist/devops-bootcamp-08-jenkins.git
+git remote add origin git@github.com:fsiegrist/devops-bootcamp-node-project.git
 # rename master branch of original Gitlab repository to main (default on GitHub)
 git branch -M main
 # push your newly created local repository to it
