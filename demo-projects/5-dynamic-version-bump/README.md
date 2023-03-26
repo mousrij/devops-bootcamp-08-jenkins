@@ -76,14 +76,13 @@ stage("Increment Version") {
           -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
           versions:commit'
       
-      def matcher = readFile('pom.xml') =~ '<version>(.*)</version>'
-      def version = matcher[0][1]
+      def version = sh script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true
       env.IMAGE_TAG = "$version-$BUILD_NUMBER"
     }
   }
 }
 ```
-These are just regular Groovy features. The `matcher` variable holds an array of all `<version>` tags in the pom.xml file. We are just interested in the first (`matcher[0]`). Since the regular expression contains a group (`(.*)`) every item in the matcher array is itself an array containing the matcher groups. Group 0 is the whole matching string, group 1 is the first group in the regEx, and so on. So `matcher[0][1]` just contains the content of the version tag.\
+`mvn help:evaluate -Dexpression=project.version` evaluates the project version and prints it to stdout, together with other maven output. The `-q` (quiet) flag suppresses the output. Unfortunately the output to stdout is suppressed too. With `-DforceStdout` the final output is just the content of the version tag.\
 We also append the current build number to the application version. `$BUILD_NUMBER` is an environment varibale provided by Jenkins.
 
 Step2: Use image tag\
