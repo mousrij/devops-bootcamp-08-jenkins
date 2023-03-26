@@ -832,6 +832,15 @@ def version = matcher[0][1] // first match, second group (group 1 is the whole e
 env.IMAGE_VERSION = "$version-$BUILD_NUMBER" // BUILD_NUMBER is an env varibale provided by Jenkins
 ```
 
+These are just regular Groovy features. The `matcher` variable holds an array of all `<version>` tags in the pom.xml file. We are just interested in the first (`matcher[0]`). Since the regular expression contains a group (`(.*)`) every item in the matcher array is itself an array containing the matcher groups. Group 0 is the whole matching string, group 1 is the first group in the regEx, and so on. So `matcher[0][1]` just contains the content of the version tag.\
+We also append the current build number to the application version. `$BUILD_NUMBER` is an environment varibale provided by Jenkins.
+
+**Note** by Felix Siegrist:\
+A better way to read the version (without parsing XML using regular expressions):
+```groovy
+def version = sh script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true
+```
+
 In the "Build and Publish Docker Image" stage we replace the hardcoded image version with `${IMAGE_VERSION}`.
 
 In the Dockerfile we have to replace the hardcoded JAR version 
