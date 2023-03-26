@@ -219,6 +219,75 @@ Therefore, you do the following:
 - Extract all logic into Jenkins-shared-library with parameters and reference it in Jenkinsfile.
 
 **Steps to solve the tasks:**
+We can reuse and extend the Jenkins Shared Library on [GitHub](https://github.com/fsiegrist/devops-bootcamp-jenkins-shared-library.git) created in [demo project 3](./demo-projects/3-create-shared-library/).
+
+Step 1: Extract code for the 'Bump Version' stage\
+To make the logic reusable for other node projects, we pass in two parameters:
+- the name of the directory containing the packaje.json file
+- the version-part of be incremented ('patch', 'minor' or 'major')
+
+**Note:** It would be nice to make the second parameter be an optional one with default value `patch`. But this results in an error during the build saying
+```
+Scripts not permitted to use method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object (org.jenkinsci.plugins.workflow.cps.CpsClosure2 bumpNpmVersion java.lang.String). Administrators can decide whether to approve or reject this signature.
+```
+It seems that optional parameters are a Groovy feature not allowed in Jenkins shared libraries.
+
+Switch to the Shared Library project and create a new file called `bumpNpmVersion.groovy` in the `vars` folder with the following content:
+```groovy
+#!/usr/bin/env groovy
+def call(String appDir, String versionPart) {
+    echo "incrementing ${versionPart} version..."
+    dir("${appDir}") {
+        sh "npm version ${versionPart}"
+
+        def packageJson = readJSON file: 'package.json'
+        def version = packageJson.version
+
+        env.IMAGE_VERSION = "$version-$BUILD_NUMBER"
+    }
+}
+```
+
+Replace the content of the `script` block in the 'Bump Version' stage with `bumpNpmVersion('app', 'patch')`.
+
+Step 2: Extract code for the 'Run Tests' stage\
+Create a new file called `runNpmTests.groovy` in the `vars` folder with the following content:
+```groovy
+#!/usr/bin/env groovy
+def call(String appDir) {
+    dir("${appDir}") {
+        sh 'npm install'
+        sh 'npm run test'
+    } 
+}
+```
+
+Replace the content of the `script` block in the 'Run Tests' stage with `runNpmTests('app')`.
+
+Step 3: Reuse shared library code for the 'Build and Push Docker Image' stage\
+The shared library function `buildAndPublishImage` we created for the demo project 3 can be reused as is. Just replace the content of the `script` block in the 'Build and Push Docker Image' stage with `buildAndPublishImage("fsiegrist/fesi-repo:devops-bootcamp-node-project-${IMAGE_VERSION}")`.
+
+Step 4: Extract code for the 'Commit Version Update' stage\
+Create a new file called `commitAndPushVersionUpdate.groovy` in the `vars` folder with the following content:
+```groovy
+#!/usr/bin/env groovy
+def call(String gitRepo, String credentialsId, String branch) {
+    withCredentials([usernamePassword(credentialsId: "${credentialsId}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+        sh 'git config user.email "jenkins@example.com"'
+        sh 'git config user.name "jenkins"'
+
+        sh "git remote set-url origin https://${USERNAME}:${PASSWORD}@${gitRepo}"
+        sh 'git add .'
+        sh 'git commit -m "ci: version bump"'
+        sh "git push origin HEAD:${branch}"
+
+        sh 'git config --unset user.email'
+        sh 'git config --unset user.name'
+    }
+}
+```
+
+Replace the content of the `script` block in the 'Commit Version Update' stage with `commitAndPushVersionUpdate('github.com/fsiegrist/devops-bootcamp-node-project.git', 'GitHub', 'shared-library')`. ('shared-library' is the name of the branch used for the modifications of the Jenkinsfile calling shared library functions.)
 
 </details>
 
