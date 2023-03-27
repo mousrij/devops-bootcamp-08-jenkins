@@ -1,3 +1,6 @@
+## Exercises
+<br />
+
 Your team members want to collaborate on your NodeJS application, where you list developers with their projects. So they ask you to set up a git repository for it.
 
 Also, you think it's a good idea to add tests, to test that no one accidentally breaks the existing code.
