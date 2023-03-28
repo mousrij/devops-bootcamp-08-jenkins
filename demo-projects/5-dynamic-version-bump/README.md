@@ -151,15 +151,12 @@ docker exec -it <jenkins-container-id> bash
 ```
 
 #### Steps to Configure Jenkins Pipeline to Not Trigger Automatically on CI build Commit
-**GitLab**\
 Step 1: Install a Jenkins plugin\
-Install a plugin called "Ignore Committer Strategy". 
+Install the plugin called "Ignore Committer Strategy". 
 
 Step 2: Configure the pipeline\
 The installed plugin lets you configure an email address of a committer that will be ignored for triggering a build (`jenkins@example.com` in our case). Open the configuration page for the multibranch pipeline project and scroll down to the "Branch Sources" > "Git" section. Open the "Add" dropdown for "Build strategies", select "Ignore Committer Strategy" and enter the email address of the committer, whose commits are to be ignored: `jenkins@example.com`. Also make sure the "Allow builds when a changeset contains non-ignored author(s)" checkbox is selected.
 
 ****
 
-**GitHub**\
-It is not necessary to install a plugin to achieve the same for a standard pipeline project. Just go to the pipeline configuration and scroll down to "Additional Behaviours" in the Git configuration. Click the "Add" dropdown and choose "Polling ignores commits from certain users" and enter the username of the committer to be ignored for triggering a build (`jenkins` in our case).\
-However, for multibranch pipeline projects I didn't find out, how to configure Jenkins to suppress automatic triggering of the build for Jenkins commits. The plugin "GitHub Commit Skip SCM Behaviour" seems not to work for multibranch pipelines.
+Note: If you only use standard pipelines (no multibranch pipelines) it is not necessary to install this plugin. Just go to the pipeline configuration and scroll down to "Additional Behaviours" in the Git configuration. Click the "Add" dropdown and choose "Polling ignores commits from certain users" and enter the username of the committer to be ignored for triggering a build (`jenkins` in our case).
