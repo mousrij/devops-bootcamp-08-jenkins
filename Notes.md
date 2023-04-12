@@ -396,7 +396,7 @@ stages {
 parameters {
   string(name: 'VERSION', defaultValue: '1', description: '...')
   choice(name: 'VERSION', choices: ['1.1', '1.2', '1,3'], description: '...')
-  boolenParam(name: 'executeTests', defaultValue: true, description: '...') 
+  booleanParam(name: 'executeTests', defaultValue: true, description: '...') 
 }
 stages {
   stage("test") {
