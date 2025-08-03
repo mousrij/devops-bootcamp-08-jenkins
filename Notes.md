@@ -890,12 +890,31 @@ Add a new stage "Commit Version Update" to the Jenkinsfile:
 stage('Commit Version Update') {
   steps {
     script {
-      withCredentials([usernamePassword(credentialsId: 'GitHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-        sh "git remote set-url origin https://${USERNAME}:${PASSWORD}@github.com/fsiegrist/devops-bootcamp-java-maven-app.git"
-        sh 'git add .'
-        sh 'git commit -m "ci: version bump"'
-        sh 'git push origin HEAD:main'
-      }
+      withCredentials([usernamePassword(
+    credentialsId: 'gitlab-credentials', 
+    passwordVariable: 'PASS', 
+    usernameVariable: 'USER')]) {
+
+    // Set global Git config (identity for commits)
+    sh 'git config --global user.email "jenkins@example.com"'
+    sh 'git config --global user.name "jenkins"'
+
+    // Git status/debug commands
+    sh 'git status'
+    sh 'git branch'
+    sh 'git config --list'
+
+    // Set Git remote to include credentials for GitLab
+    sh "git remote set-url origin https://${USER}:${PASS}@gitlab.com/nanuchi/java-maven-app.git"
+
+    // Stage and commit changes
+    sh 'git add .'
+    sh 'git commit -m "ci: version bump"'
+
+    // Push the current branch (HEAD) to remote branch `jenkins-jobs`
+    sh 'git push origin HEAD:jenkins-jobs'
+}
+
     }
   }
 }
