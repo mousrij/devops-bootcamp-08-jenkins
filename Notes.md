@@ -773,6 +773,9 @@ Now open the configuration of your multibranch pipeline project and scroll down 
 Next go back to your GitLab account and open "Settings" > "Webhooks". Paste the copied URL to the URL field and replace `JENKINS_URL` and `[Trigger token]` with the correct values. Select the "Push events" trigger and press the "Add webhook" button.
 <img src="./images/image copy 12.png" />
 
+<br />
+<a src="https://medium.com/@computingpost/how-to-use-multi-branch-pipeline-in-jenkins-a1345dbed8de" >Medium article</a>
+
 </details>
 
 *****
